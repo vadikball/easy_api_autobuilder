@@ -1,0 +1,11 @@
+pydantic>=2.0
+pydantic>=2.0
+sqlalchemy>=2.0.17
+
+[dev]
+add-trailing-comma==3.0.1
+autoflake==2.2.0
+black==23.7.0
+isort==5.12.0
+mypy==1.5.0
+wemake-python-styleguide==0.18.0
