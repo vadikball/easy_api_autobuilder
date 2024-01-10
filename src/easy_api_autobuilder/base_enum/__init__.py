@@ -1,1 +1,1 @@
-from base_enum.enums import OrderDirectionEnum
+from easy_api_autobuilder.base_enum.enums import OrderDirectionEnum

@@ -1,5 +1,5 @@
-from schema.base import BaseModel, IntegerIdSchema, UUIDIdSchema
-from schema.creation_strategy import (
+from easy_api_autobuilder.schema.base import BaseModel, IntegerIdSchema, UUIDIdSchema
+from easy_api_autobuilder.schema.creation_strategy import (
     BaseSchemaCreationStrategy,
     RequestTypes,
     SchemaCreationStrategy,
@@ -7,4 +7,4 @@ from schema.creation_strategy import (
     StrategyReturn,
     post_response_schema_factory,
 )
-from schema.factory import SchemaFactory
+from easy_api_autobuilder.schema.factory import SchemaFactory

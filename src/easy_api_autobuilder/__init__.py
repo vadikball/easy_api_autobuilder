@@ -1,4 +1,4 @@
-from arguments import (
+from easy_api_autobuilder.arguments import (
     BaseCreationArguments,
     BuilderArguments,
     DetailArguments,
@@ -7,8 +7,8 @@ from arguments import (
     PutArguments,
     SchemaCreationArguments,
 )
-from base_enum import OrderDirectionEnum
-from builder import (
+from easy_api_autobuilder.base_enum import OrderDirectionEnum
+from easy_api_autobuilder.builder import (
     DataMapperBuilder,
     repo_deps_factory,
     repo_factory,
@@ -17,9 +17,9 @@ from builder import (
     service_deps_factory,
     service_factory,
 )
-from page import Page, PageParams
-from repo import BaseRepo, SecondaryBaseRepo
-from schema import (
+from easy_api_autobuilder.page import Page, PageParams
+from easy_api_autobuilder.repo import BaseRepo, SecondaryBaseRepo
+from easy_api_autobuilder.schema import (
     BaseModel,
     BaseSchemaCreationStrategy,
     IntegerIdSchema,
@@ -31,7 +31,7 @@ from schema import (
     UUIDIdSchema,
     post_response_schema_factory,
 )
-from service import (
+from easy_api_autobuilder.service import (
     BaseRepoService,
     BaseService,
     DeleteService,
@@ -41,4 +41,4 @@ from service import (
     PutService,
     SecondaryBaseService,
 )
-from view import BaseView, ExcludeFieldAnnotation, SecondaryView, exclude_parameter
+from easy_api_autobuilder.view import BaseView, ExcludeFieldAnnotation, SecondaryView, exclude_parameter

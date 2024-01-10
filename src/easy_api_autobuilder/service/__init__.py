@@ -1,4 +1,4 @@
-from service.base import (
+from easy_api_autobuilder.service.base import (
     BaseRepoService,
     BaseService,
     DeleteService,
