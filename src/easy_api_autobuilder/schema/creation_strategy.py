@@ -4,11 +4,12 @@ from functools import cached_property
 from typing import Any
 from uuid import UUID
 
-from arguments.schema_factory import SchemaCreationArguments
 from fastapi import Response
-from page.page import Page, PageParams
-from schema.base import BaseModel, IntegerIdSchema, UUIDIdSchema
-from schema.factory import SchemaFactory
+
+from easy_api_autobuilder.arguments import SchemaCreationArguments
+from easy_api_autobuilder.page import Page, PageParams
+from easy_api_autobuilder.schema.base import BaseModel, IntegerIdSchema, UUIDIdSchema
+from easy_api_autobuilder.schema.factory import SchemaFactory
 
 
 def post_response_schema_factory(

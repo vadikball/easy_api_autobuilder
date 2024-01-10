@@ -2,7 +2,8 @@ from typing import Generic, TypeVar
 
 from fastapi import Query
 from pydantic import Field
-from schema.base import BaseModel
+
+from easy_api_autobuilder.schema import BaseModel
 
 PageData = TypeVar("PageData")
 

@@ -1,4 +1,4 @@
-from builder.base import (
+from easy_api_autobuilder.builder.base import (
     DataMapperBuilder,
     repo_deps_factory,
     repo_factory,

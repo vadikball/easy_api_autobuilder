@@ -1,15 +1,15 @@
 from typing import Any
 from uuid import UUID
 
-from constants.constants import (
+from easy_api_autobuilder.constants.constants import (
     ALLOW_NONE_FIELD_NAME,
     PARAM_ORDER_BY_FIELD_NAME,
     PARAM_ORDER_DIRECTION_FIELD_NAME,
     allocated_l,
 )
-from page.page import Page, PageParams
-from repo.base_repo import BaseRepo, SecondaryBaseRepo
-from schema.base import BaseModel
+from easy_api_autobuilder.page import Page, PageParams
+from easy_api_autobuilder.repo import BaseRepo, SecondaryBaseRepo
+from easy_api_autobuilder.schema import BaseModel
 
 
 class BaseRepoService:

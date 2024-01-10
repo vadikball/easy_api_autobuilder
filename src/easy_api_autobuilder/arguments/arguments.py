@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from arguments.schema_factory import SchemaCreationArguments
+from easy_api_autobuilder.arguments.schema_factory import SchemaCreationArguments
 
 
 class BuilderArguments(BaseModel):

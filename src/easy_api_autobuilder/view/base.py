@@ -5,8 +5,8 @@ from typing import Annotated, Callable, Literal
 from fastapi import APIRouter, Body, Depends, Response
 from fastapi.params import Depends as DependsClass
 
-from schema.creation_strategy import BaseSchemaCreationStrategy, StrategyReturn
-from service import BaseService, SecondaryBaseService
+from easy_api_autobuilder.schema import BaseSchemaCreationStrategy, StrategyReturn
+from easy_api_autobuilder.service import BaseService, SecondaryBaseService
 
 get_handlers = frozenset(
     (

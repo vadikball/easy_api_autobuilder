@@ -1,12 +1,13 @@
 """Base repo implementation."""
 from typing import Any
 
-from base_enum.enums import OrderDirectionEnum
-from constants.constants import allocated_l, default_order_fields
 from sqlalchemy import delete, func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import DeclarativeMeta
+
+from easy_api_autobuilder.base_enum import OrderDirectionEnum
+from easy_api_autobuilder.constants.constants import allocated_l, default_order_fields
 
 
 class BaseRepo:

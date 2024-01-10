@@ -1,1 +1,1 @@
-from repo.base_repo import BaseRepo, SecondaryBaseRepo
+from easy_api_autobuilder.repo.base_repo import BaseRepo, SecondaryBaseRepo

@@ -1,1 +1,1 @@
-from page.page import Page, PageParams
+from easy_api_autobuilder.page.page import Page, PageParams

@@ -5,15 +5,11 @@ from fastapi.params import Depends as DependsClass
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeMeta
 
-from arguments.arguments import BuilderArguments
-from repo.base_repo import BaseRepo, SecondaryBaseRepo
-from schema.creation_strategy import (
-    SchemaCreationStrategy,
-    SecondarySchemaCreationStrategy,
-)
-from schema.factory import SchemaFactory
-from service import BaseService, SecondaryBaseService
-from view.base import BaseView, SecondaryView
+from easy_api_autobuilder.arguments import BuilderArguments
+from easy_api_autobuilder.repo import BaseRepo, SecondaryBaseRepo
+from easy_api_autobuilder.schema import SchemaCreationStrategy, SchemaFactory, SecondarySchemaCreationStrategy
+from easy_api_autobuilder.service import BaseService, SecondaryBaseService
+from easy_api_autobuilder.view import BaseView, SecondaryView
 
 
 def service_factory(

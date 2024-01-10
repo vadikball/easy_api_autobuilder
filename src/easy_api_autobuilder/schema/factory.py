@@ -7,17 +7,18 @@ from types import UnionType
 from typing import Annotated, Any
 from uuid import UUID
 
-from base_enum.enums import OrderDirectionEnum
-from constants.constants import (
+from fastapi import Query
+from pydantic import Field, create_model
+from sqlalchemy.orm import DeclarativeMeta, InstrumentedAttribute, Relationship
+
+from easy_api_autobuilder.base_enum import OrderDirectionEnum
+from easy_api_autobuilder.constants.constants import (
     PARAM_ORDER_BY_FIELD_NAME,
     PARAM_ORDER_DIRECTION_FIELD_NAME,
     allocated_s,
     default_order_fields,
 )
-from fastapi import Query
-from pydantic import Field, create_model
-from schema.base import BaseModel
-from sqlalchemy.orm import DeclarativeMeta, InstrumentedAttribute, Relationship
+from easy_api_autobuilder.schema.base import BaseModel
 
 schema_cache: dict[str, type[BaseModel]] = {}
 schema_factory_cache: dict[str, DeclarativeMeta] = {}  # {__tablename__: Model}
