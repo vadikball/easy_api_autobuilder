@@ -4,7 +4,7 @@ import inspect
 from enum import StrEnum
 from functools import cached_property
 from types import UnionType
-from typing import Annotated, Any
+from typing import Annotated, Any, Generic
 from uuid import UUID
 
 from fastapi import Query
@@ -34,18 +34,26 @@ filter_types = (
 )
 
 
-def eval_type(
-    incoming_annotation: type,
-) -> type[bool, int, str, datetime.datetime, UUID] | None:
-    if isinstance(incoming_annotation, UnionType):
+def eval_type(incoming_annotation: type) -> type[bool, int, str, datetime.datetime, UUID] | None:
+    if isinstance(incoming_annotation, (UnionType, Generic)):
         for filter_type in filter_types:
-            if filter_type in incoming_annotation.__args__:
-                return filter_type
+            try:
+                if filter_type in incoming_annotation.__args__:
+                    return filter_type
+            except AttributeError:
+                return
 
     if incoming_annotation in filter_types:
         return incoming_annotation
 
     return None
+
+
+def extract_field_type(field: InstrumentedAttribute) -> type:
+    try:
+        return field.type.python_type
+    except AttributeError:
+        return field.prop.argument
 
 
 class SchemaFactory:
@@ -63,6 +71,12 @@ class SchemaFactory:
 
         self._model = model
         self._model_annotations = inspect.get_annotations(self._model)
+        self._model_annotations.update(
+            dict(
+                (name, extract_field_type(field),)
+                for name, field in inspect.getmembers(self._model, lambda attr: isinstance(attr, InstrumentedAttribute))
+            )
+        )
         schema_factory_cache[self._model.__tablename__] = self
 
     @property
