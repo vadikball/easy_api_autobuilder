@@ -33,7 +33,7 @@ class RequestTypes:
 @dataclass
 class StrategyReturn:
     request: RequestTypes
-    response: type[BaseModel] | type[Response]
+    response: type[BaseModel] | type[list[BaseModel]] | type[Response]
     inner_response_type: type[BaseModel] | None = None
 
 
@@ -140,14 +140,16 @@ class SecondarySchemaCreationStrategy(BaseSchemaCreationStrategy):
             request=RequestTypes(
                 model_pk=self._schema_factory.pk_annotations[0], params=None, body=None
             ),
-            response=self._schema_factory.create_schema_from_model(
-                defaults=self.arguments.list_args.defaults,
-                excluded=self.arguments.list_args.excluded,
-                name_postfix=self.arguments.list_args.name_postfix,
-                nested=self.arguments.list_args.nested,
-                put=self.arguments.list_args.put,
-                included=self.arguments.list_args.included,
-            ),
+            response=list[
+                self._schema_factory.create_schema_from_model(
+                    defaults=self.arguments.list_args.defaults,
+                    excluded=self.arguments.list_args.excluded,
+                    name_postfix=self.arguments.list_args.name_postfix,
+                    nested=self.arguments.list_args.nested,
+                    put=self.arguments.list_args.put,
+                    included=self.arguments.list_args.included,
+                )
+            ]
         )
 
     @cached_property
