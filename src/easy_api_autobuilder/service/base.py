@@ -1,3 +1,4 @@
+from types import GenericAlias
 from typing import Any
 from uuid import UUID
 
@@ -146,7 +147,7 @@ class BaseService(
 
 
 class SecondaryBaseService:
-    _output_list: type[BaseModel]
+    _output_list: type[BaseModel] | type[list[BaseModel]]
 
     _input_create: type[BaseModel]
 
@@ -158,6 +159,9 @@ class SecondaryBaseService:
     ) -> list[BaseModel]:
         """Here must be logic for converting query params to bd limit, offset, filters."""
         rows_in_db = await self._repo.get_by_first_pk(pkey_val=model_pk)
+
+        if isinstance(self._output_list, GenericAlias):
+            return [self._output_list.__args__[0].model_validate(row) for row in rows_in_db]
 
         return [self._output_list.model_validate(row) for row in rows_in_db]
 
