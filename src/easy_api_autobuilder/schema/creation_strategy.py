@@ -8,7 +8,7 @@ from fastapi import Response
 
 from easy_api_autobuilder.arguments import SchemaCreationArguments
 from easy_api_autobuilder.page import Page, PageParams
-from easy_api_autobuilder.schema.base import BaseModel, IntegerIdSchema, UUIDIdSchema
+from easy_api_autobuilder.schema.base import BaseModel, BaseParams, IntegerIdSchema, UUIDIdSchema
 from easy_api_autobuilder.schema.factory import SchemaFactory
 
 
@@ -24,10 +24,9 @@ def post_response_schema_factory(
 @dataclass
 class RequestTypes:
     model_pk: type[int | UUID] | None
-    params: type[BaseModel] | None
+    params: type[BaseParams] | None
     body: type[BaseModel] | None
     secondary_model_pk: type[int | UUID] | None = None
-    allow_none: Any = None
 
 
 @dataclass
@@ -58,16 +57,12 @@ class SchemaCreationStrategy(BaseSchemaCreationStrategy):
             put=self.arguments.list_args.put,
             included=self.arguments.list_args.included,
         )
-        (
-            params_schema,
-            allow_none_annotation,
-        ) = self._schema_factory.create_params_from_model(PageParams)
+        params_schema = self._schema_factory.create_params_from_model(PageParams)
         return StrategyReturn(
             request=RequestTypes(
                 model_pk=None,
                 params=params_schema,
                 body=None,
-                allow_none=allow_none_annotation,
             ),
             response=Page[list[return_schema]],
             inner_response_type=return_schema,
@@ -76,9 +71,7 @@ class SchemaCreationStrategy(BaseSchemaCreationStrategy):
     @cached_property
     def detail(self) -> StrategyReturn:
         return StrategyReturn(
-            request=RequestTypes(
-                model_pk=self._schema_factory.pk_annotations[0], params=None, body=None
-            ),
+            request=RequestTypes(model_pk=self._schema_factory.pk_annotations[0], params=None, body=None),
             response=self._schema_factory.create_schema_from_model(
                 defaults=self.arguments.detail_args.defaults,
                 excluded=self.arguments.detail_args.excluded,
@@ -103,9 +96,7 @@ class SchemaCreationStrategy(BaseSchemaCreationStrategy):
                     put=self.arguments.post_args.put,
                 ),
             ),
-            response=post_response_schema_factory(
-                self._schema_factory.pk_annotations[0]
-            ),
+            response=post_response_schema_factory(self._schema_factory.pk_annotations[0]),
         )
 
     @cached_property
@@ -137,9 +128,7 @@ class SecondarySchemaCreationStrategy(BaseSchemaCreationStrategy):
     @cached_property
     def list(self) -> StrategyReturn:
         return StrategyReturn(
-            request=RequestTypes(
-                model_pk=self._schema_factory.pk_annotations[0], params=None, body=None
-            ),
+            request=RequestTypes(model_pk=self._schema_factory.pk_annotations[0], params=None, body=None),
             response=list[
                 self._schema_factory.create_schema_from_model(
                     defaults=self.arguments.list_args.defaults,
@@ -149,7 +138,7 @@ class SecondarySchemaCreationStrategy(BaseSchemaCreationStrategy):
                     put=self.arguments.list_args.put,
                     included=self.arguments.list_args.included,
                 )
-            ]
+            ],
         )
 
     @cached_property
@@ -171,11 +160,7 @@ class SecondarySchemaCreationStrategy(BaseSchemaCreationStrategy):
 
     @cached_property
     def delete(self) -> StrategyReturn:
-        secondary_pk = (
-            self._schema_factory.pk_annotations[1]
-            if len(self._schema_factory.pk_annotations) > 1
-            else None
-        )
+        secondary_pk = self._schema_factory.pk_annotations[1] if len(self._schema_factory.pk_annotations) > 1 else None
 
         return StrategyReturn(
             request=RequestTypes(

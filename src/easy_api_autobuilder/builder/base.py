@@ -12,9 +12,7 @@ from easy_api_autobuilder.service import BaseService, SecondaryBaseService
 from easy_api_autobuilder.view import BaseView, SecondaryView
 
 
-def service_factory(
-    schema_strategy: SchemaCreationStrategy, class_name: str | None = None
-) -> type[BaseService]:
+def service_factory(schema_strategy: SchemaCreationStrategy, class_name: str | None = None) -> type[BaseService]:
     class AnonymousService(BaseService):
         _output_list = schema_strategy.list.response
         _inner_data_type = schema_strategy.list.inner_response_type
@@ -42,18 +40,14 @@ def secondary_service_factory(
     return AnonymousSecondaryService
 
 
-def service_deps_factory(
-    service: type[BaseService | SecondaryBaseService], repo_deps: Depends
-) -> DependsClass:
+def service_deps_factory(service: type[BaseService | SecondaryBaseService], repo_deps: Depends) -> DependsClass:
     def inner(repo: Annotated[BaseRepo | SecondaryBaseRepo, repo_deps]) -> BaseService:
         return service(repo)
 
     return Depends(inner)
 
 
-def repo_deps_factory(
-    repo: type[BaseRepo | SecondaryBaseRepo], session_dependency: DependsClass
-) -> DependsClass:
+def repo_deps_factory(repo: type[BaseRepo | SecondaryBaseRepo], session_dependency: DependsClass) -> DependsClass:
     def inner(db_session: Annotated[AsyncSession, session_dependency]) -> BaseRepo:
         return repo(db_session)
 
@@ -85,8 +79,7 @@ class DataMapperBuilder:
         model: DeclarativeMeta,
         session_dependency: DependsClass,
         repo: type[BaseRepo] | None = None,
-        secondary: dict[str, tuple[DeclarativeMeta, type[BaseRepo] | None]]
-        | None = None,
+        secondary: dict[str, tuple[DeclarativeMeta, type[BaseRepo] | None]] | None = None,
         arguments: BuilderArguments | None = None,
     ):
         self.prefix = prefix
@@ -104,20 +97,14 @@ class DataMapperBuilder:
             self.repo = repo_factory(self.model)
 
         schema_factory = SchemaFactory(self.model)
-        schema_strategy = SchemaCreationStrategy(
-            schema_factory, self.arguments.schema_creation_args
-        )
+        schema_strategy = SchemaCreationStrategy(schema_factory, self.arguments.schema_creation_args)
 
-        service = service_factory(
-            schema_strategy, self.model.__name__.split("Model")[0]
-        )
+        service = service_factory(schema_strategy, self.model.__name__.split("Model")[0])
         service_dependency = self.get_service_dependency(service, self.repo)
 
         secondary_views = self.get_secondary_views()
 
-        return BaseView(
-            router, service, service_dependency, schema_strategy, secondary_views
-        )
+        return BaseView(router, service, service_dependency, schema_strategy, secondary_views)
 
     def get_service_dependency(
         self,
@@ -140,17 +127,13 @@ class DataMapperBuilder:
                 secondary_repo = secondary_repo_factory(secondary_model)
 
             secondary_schema_factory = SchemaFactory(secondary_model)
-            secondary_schema_strategy = SecondarySchemaCreationStrategy(
-                secondary_schema_factory
-            )
+            secondary_schema_strategy = SecondarySchemaCreationStrategy(secondary_schema_factory)
 
             secondary_service = secondary_service_factory(
                 secondary_schema_strategy, secondary_model.__name__.split("Model")[0]
             )
 
-            secondary_service_deps = self.get_service_dependency(
-                secondary_service, secondary_repo
-            )
+            secondary_service_deps = self.get_service_dependency(secondary_service, secondary_repo)
 
             s_views_container.append(
                 SecondaryView(

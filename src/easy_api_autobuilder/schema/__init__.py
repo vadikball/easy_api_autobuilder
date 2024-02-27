@@ -1,4 +1,4 @@
-from easy_api_autobuilder.schema.base import BaseModel, IntegerIdSchema, UUIDIdSchema
+from easy_api_autobuilder.schema.base import BaseModel, BaseParams, IntegerIdSchema, UUIDIdSchema
 from easy_api_autobuilder.schema.creation_strategy import (
     BaseSchemaCreationStrategy,
     RequestTypes,

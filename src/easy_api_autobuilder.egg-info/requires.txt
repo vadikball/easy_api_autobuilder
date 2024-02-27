@@ -1,5 +1,5 @@
 pydantic>=2.0
-pydantic>=2.0
+fastapi>=0.110.0
 sqlalchemy>=2.0.17
 
 [dev]

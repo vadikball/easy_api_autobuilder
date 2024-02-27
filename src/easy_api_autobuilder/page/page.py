@@ -3,12 +3,12 @@ from typing import Generic, TypeVar
 from fastapi import Query
 from pydantic import Field
 
-from easy_api_autobuilder.schema import BaseModel
+from easy_api_autobuilder.schema import BaseModel, BaseParams
 
 PageData = TypeVar("PageData")
 
 
-class PageParams(BaseModel):
+class PageParams(BaseParams):
     page: int = Query(default=1, ge=1)
     size: int = Query(default=10, ge=1)
 

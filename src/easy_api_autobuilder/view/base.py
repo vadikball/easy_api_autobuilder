@@ -52,9 +52,7 @@ class SecondaryView:
         if handler_name == "list":
             return secondary_route_sample.format("/{model_pk}", self.route, "")
 
-        return secondary_route_sample.format(
-            "/{model_pk}", self.route, "/{secondary_model_pk}"
-        )
+        return secondary_route_sample.format("/{model_pk}", self.route, "/{secondary_model_pk}")
 
 
 class BaseView:
@@ -81,9 +79,7 @@ class BaseView:
         self._main_service_deps = main_service_deps
         self._main_schemas = main_schemas
 
-        self._secondary_views = (
-            secondary_views if secondary_views is not None else tuple()
-        )
+        self._secondary_views = secondary_views if secondary_views is not None else tuple()
 
         self._init()
 
@@ -111,9 +107,7 @@ class BaseView:
         service_deps: DependsClass,
         service: type[BaseService | SecondaryBaseService],
     ) -> None:
-        method = (
-            service_handler.upper() if service_handler not in get_handlers else "GET"
-        )
+        method = service_handler.upper() if service_handler not in get_handlers else "GET"
         response_code = self._response_code(method)
 
         self.router.add_api_route(
@@ -129,9 +123,7 @@ class BaseView:
             status_code=response_code,
         )
 
-    def _create_main_handler(
-        self, service_handler: Literal["list", "detail", "post", "put", "delete"]
-    ) -> None:
+    def _create_main_handler(self, service_handler: Literal["list", "detail", "post", "put", "delete"]) -> None:
         route = "" if service_handler in not_pk_handler else "/{model_pk}"
         annotations: StrategyReturn = getattr(self._main_schemas, service_handler)
 
@@ -171,18 +163,9 @@ class BaseView:
 
         body_annotation = self._eval_body_annotation(annotations)
         param_annotation = self._eval_params_annotation(annotations)
-        pk_annotation = (
-            annotations.request.model_pk
-            if annotations.request.model_pk
-            else ExcludeFieldAnnotation
-        )
+        pk_annotation = annotations.request.model_pk if annotations.request.model_pk else ExcludeFieldAnnotation
         secondary_pk_annotation = (
-            annotations.request.secondary_model_pk
-            if annotations.request.secondary_model_pk
-            else ExcludeFieldAnnotation
-        )
-        allow_none_default, allow_none_annotations = self._eval_allow_none_annotation(
-            annotations
+            annotations.request.secondary_model_pk if annotations.request.secondary_model_pk else ExcludeFieldAnnotation
         )
 
         async def inner(  # noqa: WPS430
@@ -191,7 +174,6 @@ class BaseView:
             secondary_model_pk: secondary_pk_annotation,
             body: body_annotation,
             request_params: param_annotation,
-            allow_none: allow_none_annotations = allow_none_default,
         ) -> response_type:
             args = {}
             if model_pk:
@@ -206,9 +188,6 @@ class BaseView:
             if body:
                 args["body"] = body
 
-            if allow_none:
-                args["allow_none"] = allow_none
-
             view_handler = getattr(service, service_handler)
             response = await view_handler(**args)
 
@@ -220,23 +199,11 @@ class BaseView:
         return inner
 
     def _eval_body_annotation(self, annotations: StrategyReturn) -> Annotated | None:
-        return (
-            Annotated[annotations.request.body, Body()]
-            if annotations.request.body
-            else ExcludeFieldAnnotation
-        )
+        return Annotated[annotations.request.body, Body()] if annotations.request.body else ExcludeFieldAnnotation
 
     def _eval_params_annotation(self, annotations: StrategyReturn) -> Annotated | None:
         return (
-            Annotated[annotations.request.params, Depends()]
+            Annotated[annotations.request.params, Depends(annotations.request.params.params_deps())]
             if annotations.request.params
             else ExcludeFieldAnnotation
         )
-
-    def _eval_allow_none_annotation(
-        self, annotations: StrategyReturn
-    ) -> tuple[list | None, Annotated | None]:
-        if annotations.request.allow_none is None:
-            return None, ExcludeFieldAnnotation
-
-        return [], annotations.request.allow_none

@@ -13,16 +13,19 @@ from sqlalchemy.orm import DeclarativeMeta, InstrumentedAttribute, Relationship
 
 from easy_api_autobuilder.base_enum import OrderDirectionEnum
 from easy_api_autobuilder.constants.constants import (
+    ALLOW_NONE_FIELD_NAME,
+    FIELD_VALUE_NAME,
+    FILTER_TYPE_NAME,
     PARAM_ORDER_BY_FIELD_NAME,
     PARAM_ORDER_DIRECTION_FIELD_NAME,
+    CreatedSchemaNameFormat,
     allocated_s,
     default_order_fields,
 )
-from easy_api_autobuilder.schema.base import BaseModel
+from easy_api_autobuilder.schema.base import BaseModel, BaseParams, FilterOperationEnum
 
 schema_cache: dict[str, type[BaseModel]] = {}
 schema_factory_cache: dict[str, DeclarativeMeta] = {}  # {__tablename__: Model}
-# models_cache: dict[str, DeclarativeMeta] = {}  # {ModelClassName as str: Model}
 
 
 filter_types = (
@@ -30,8 +33,10 @@ filter_types = (
     int,
     str,
     datetime.datetime,
+    datetime.date,
     UUID,
 )
+list_types = {datetime.datetime, datetime.date}
 
 
 def eval_type(incoming_annotation: type) -> type[bool, int, str, datetime.datetime, UUID] | None:
@@ -73,7 +78,10 @@ class SchemaFactory:
         self._model_annotations = inspect.get_annotations(self._model)
         self._model_annotations.update(
             dict(
-                (name, extract_field_type(field),)
+                (
+                    name,
+                    extract_field_type(field),
+                )
                 for name, field in inspect.getmembers(self._model, lambda attr: isinstance(attr, InstrumentedAttribute))
             )
         )
@@ -84,10 +92,10 @@ class SchemaFactory:
         return self._model.__name__.split("Model")[0]
 
     def create_params_from_model(
-        self, primary_schema: type[BaseModel] | None = None, name_postfix: str = "List"
-    ) -> tuple[type[BaseModel], Any]:
+        self, primary_schema: type[BaseParams] | None = None, name_postfix: str = "List"
+    ) -> type[BaseParams]:
         if primary_schema is None:
-            primary_schema = BaseModel
+            primary_schema = BaseParams
 
         schema_annotations = {}
         order_fields = []
@@ -103,27 +111,39 @@ class SchemaFactory:
 
             allow_none.append(field_name)
 
+            if annotation_type in list_types:
+                nested_annotation = {
+                    f"{field_name}_{FIELD_VALUE_NAME}": (
+                        list[annotation_type],
+                        Field(default_factory=list),
+                    ),
+                    f"{field_name}_{FILTER_TYPE_NAME}": (
+                        FilterOperationEnum,
+                        FilterOperationEnum.or_type,
+                    ),
+                }
+                annotation_type = create_model(field_name + "_nested_param", **nested_annotation, __base__=BaseParams)
+
             schema_annotations[field_name] = (
-                Annotated[annotation_type | None, Query()],
+                annotation_type | None,
                 None,
             )
 
-        allow_none_annotation = None
-
         if allow_none:
             AllowNoneEnum = StrEnum(
-                "{0}{1}".format(self._pure_name, "AllowNoneEnum"),
+                CreatedSchemaNameFormat.format(self._pure_name, "AllowNoneEnum"),
                 {allow_none_field: allow_none_field for allow_none_field in allow_none},
             )
             allow_none_annotation = Annotated[list[AllowNoneEnum], Query()]
+            schema_annotations[ALLOW_NONE_FIELD_NAME] = (
+                allow_none_annotation,
+                Field(default_factory=list),
+            )
 
         if order_fields:
             OrderEnum = StrEnum(
-                "{0}{1}".format(self._pure_name, "OrderByEnum"),
-                {
-                    order_field_name: order_field_name
-                    for order_field_name in order_fields
-                },
+                CreatedSchemaNameFormat.format(self._pure_name, "OrderByEnum"),
+                {order_field_name: order_field_name for order_field_name in order_fields},
             )
 
             default_enum = OrderEnum(OrderEnum._member_names_[0])
@@ -143,14 +163,12 @@ class SchemaFactory:
             )
 
         schema_name = "{0}{1}{2}".format(self._pure_name, "Params", name_postfix)
-        schema = create_model(
-            schema_name, **schema_annotations, __base__=primary_schema
-        )
+        schema = create_model(schema_name, **schema_annotations, __base__=primary_schema)
         schema_cache[schema_name] = schema
 
         print(f"{self._model.__tablename__}, {schema_name}\n{schema_annotations}\n\n")
 
-        return schema, allow_none_annotation
+        return schema
 
     def create_schema_from_model(
         self,
@@ -170,9 +188,7 @@ class SchemaFactory:
         excluded = excluded or allocated_s
         included = included or allocated_s
 
-        schema_annotations = self._create_schema_annotations(
-            defaults, excluded, nested, put, included
-        )
+        schema_annotations = self._create_schema_annotations(defaults, excluded, nested, put, included)
 
         print(f"{self._model.__tablename__}, {schema_name}\n{schema_annotations}\n\n")
 
@@ -220,21 +236,19 @@ class SchemaFactory:
                     default_value = None
 
                 else:
-                    if model_field.default is None:
-                        if model_field.nullable is False:
-                            default_value = ...
-                        else:
-                            default_value = None
-
-                    elif field_name in defaults:
+                    if field_name in defaults:
                         default_value = defaults[field_name]
                     else:
-                        if model_field.default.is_callable:
-                            default_value = Field(
-                                default_factory=model_field.default.arg
-                            )
+                        if model_field.default is None:
+                            if model_field.nullable is False:
+                                default_value = ...
+                            else:
+                                default_value = None
                         else:
-                            default_value = model_field.default.arg
+                            if model_field.default.is_callable:
+                                default_value = Field(default_factory=model_field.default.arg)
+                            else:
+                                default_value = model_field.default.arg
 
             schema_annotations[field_name] = (
                 annotation,
@@ -251,15 +265,10 @@ class SchemaFactory:
         nested_schema_factory = SchemaFactory(sub_model)
 
         if field_property.uselist:
-            annotation = list[
-                nested_schema_factory.create_schema_from_model(name_postfix="List")
-            ]
+            annotation = list[nested_schema_factory.create_schema_from_model(name_postfix="List")]
             default_value = Field(default_factory=list)
         else:
-            annotation = (
-                nested_schema_factory.create_schema_from_model(name_postfix="Detail")
-                | None
-            )
+            annotation = nested_schema_factory.create_schema_from_model(name_postfix="Detail") | None
             default_value = None
 
         return annotation, default_value

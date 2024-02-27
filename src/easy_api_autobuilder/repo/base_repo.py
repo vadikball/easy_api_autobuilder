@@ -1,13 +1,20 @@
 """Base repo implementation."""
 from typing import Any
 
-from sqlalchemy import delete, func, insert, select, update
+from sqlalchemy import and_, between, delete, func, insert, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import DeclarativeMeta
 
 from easy_api_autobuilder.base_enum import OrderDirectionEnum
-from easy_api_autobuilder.constants.constants import allocated_l, default_order_fields
+from easy_api_autobuilder.constants.constants import (
+    FIELD_VALUE_NAME,
+    FILTER_TYPE_NAME,
+    NESTED_PARAM_TEMPLATE,
+    allocated_l,
+    default_order_fields,
+)
+from easy_api_autobuilder.schema.base import FilterOperationEnum
 
 
 class BaseRepo:
@@ -106,12 +113,35 @@ class BaseRepo:
         rows = await self._session.execute(query)
         return rows.scalars().all()
 
+    def _eval_list_filters(self, field_name: str, field_value: dict[str, Any]) -> Any:
+        param_field_name = NESTED_PARAM_TEMPLATE.format(field_name, FIELD_VALUE_NAME)
+        value_seq = field_value.get(param_field_name)
+        if not value_seq:
+            return getattr(self._cls_model, field_name) == None
+
+        if len(value_seq) == 1:
+            return getattr(self._cls_model, field_name) == value_seq[0]
+
+        param_filter_type_name = NESTED_PARAM_TEMPLATE.format(field_name, FILTER_TYPE_NAME)
+        if field_value[param_filter_type_name] == FilterOperationEnum.or_type:
+            return or_(*[getattr(self._cls_model, field_name) == value for value in value_seq])
+
+        elif field_value[param_filter_type_name] == FilterOperationEnum.and_type:
+            return and_(*[getattr(self._cls_model, field_name) == value for value in value_seq])
+
+        elif field_value[param_filter_type_name] == FilterOperationEnum.between_type:
+            return between(getattr(self._cls_model, field_name), min(value_seq), max(value_seq))
+
     def _eval_filters(self, filters: dict[str, Any] | None) -> list:
         if filters is None:
             return allocated_l
 
         filter_exp = []
         for field_name, field_value in filters.items():
+            if isinstance(field_value, dict):
+                filter_exp.append(self._eval_list_filters(field_name, field_value))
+                continue
+
             filter_exp.append(getattr(self._cls_model, field_name) == field_value)
 
         return filter_exp
@@ -129,9 +159,7 @@ class BaseRepo:
 
         return order_exp
 
-    def _eval_order(
-        self, order_by: str | None, order_dir: OrderDirectionEnum | None
-    ) -> Any:
+    def _eval_order(self, order_by: str | None, order_dir: OrderDirectionEnum | None) -> Any:
         if order_by is None:
             return self._default_order()
 
@@ -188,18 +216,14 @@ class BaseRepo:
 
     async def get_by_field(self, *, field: str, field_value: Any) -> Any:
         """Return objects from db with condition field=val."""
-        query = select(self._cls_model).where(
-            getattr(self._cls_model, field) == field_value
-        )
+        query = select(self._cls_model).where(getattr(self._cls_model, field) == field_value)
 
         rows = await self._session.execute(query)
         return rows.scalars().all()
 
     async def get_by_field_or_none(self, *, field: str, field_value: Any) -> Any:
         """Return objects from db with condition field=val."""
-        custom_query = select(self._cls_model).where(
-            getattr(self._cls_model, field) == field_value
-        )
+        custom_query = select(self._cls_model).where(getattr(self._cls_model, field) == field_value)
 
         rows = await self._session.execute(custom_query)
         return rows.scalar()
@@ -255,27 +279,21 @@ class SecondaryBaseRepo:
         """Return objects from db with condition field=val."""
         first_primary_key = inspect(self._cls_model).primary_key[0].name
 
-        query = select(self._cls_model).where(
-            getattr(self._cls_model, first_primary_key) == pkey_val
-        )
+        query = select(self._cls_model).where(getattr(self._cls_model, first_primary_key) == pkey_val)
 
         rows = await self._session.execute(query)
         return rows.scalars().all()
 
     async def get_by_field(self, *, field: str, field_value: Any) -> Any:
         """Return objects from db with condition field=val."""
-        query = select(self._cls_model).where(
-            getattr(self._cls_model, field) == field_value
-        )
+        query = select(self._cls_model).where(getattr(self._cls_model, field) == field_value)
 
         rows = await self._session.execute(query)
         return rows.scalars().all()
 
     async def get_by_field_or_none(self, *, field: str, field_value: Any) -> Any:
         """Return objects from db with condition field=val."""
-        custom_query = select(self._cls_model).where(
-            getattr(self._cls_model, field) == field_value
-        )
+        custom_query = select(self._cls_model).where(getattr(self._cls_model, field) == field_value)
 
         rows = await self._session.execute(custom_query)
         return rows.scalar()
